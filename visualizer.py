@@ -89,7 +89,7 @@ def visualize_trajectories_on_video(trajectories, P, ball_df,
     writer.release()
     print(f"Saved annotated video to {out_path} ({frame_idx} frames)")
 
-def visualize_traj_vs_detections(trajectories, P, ball_df, width=1920, height=1080):
+def visualize_traj_vs_detections(trajectories, P, ball_df, out_dir, width=1920, height=1080):
     '''Saves one image per trajectory segment showing the projected trajectory and ball detections on a black canvas.
 
     Args:
@@ -104,7 +104,6 @@ def visualize_traj_vs_detections(trajectories, P, ball_df, width=1920, height=10
         Saves images to predictions/traj_vs_detections/traj_XXXX.jpg
     '''
     
-    out_dir = Path('predictions/traj_vs_detections')
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for i, traj_df in enumerate(trajectories):

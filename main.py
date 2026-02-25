@@ -43,7 +43,9 @@ def pipeline(vid_path, save_path_parents, player_model, court_model, segs=None, 
     trajectories = trajectory.predict_segments(ball_df, segments, P, FPS)
     visualizer.visualize_trajectories_on_video(trajectories, P, ball_df, vid_path=vid_path, out_path='predictions/rally6_v2/annotated_with_ball.mp4', show_ball=True)
     visualizer.visualize_trajectories_on_video(trajectories, P, ball_df, vid_path=vid_path, out_path='predictions/rally6_v2/annotated_without_ball.mp4', show_ball=False)
-    visualizer.visualize_traj_vs_detections(trajectories, P, ball_df, width=width, height=height)
+
+    out_dir = Path(f'predictions/{vid_path.stem}/traj_vs_detections')
+    visualizer.visualize_traj_vs_detections(trajectories, P, ball_df, out_dir, width=width, height=height)
 
     print('Done!')
 

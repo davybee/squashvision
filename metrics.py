@@ -85,7 +85,6 @@ def main():
         distances, mean_dist = get_traj_accuracy(proj_traj, gt_points.values)
         print(f'Trajectory {i} avg distance:', mean_dist, 'px')
 
-    
 
 if __name__ == '__main__':
     main()
