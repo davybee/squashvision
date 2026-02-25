@@ -10,7 +10,7 @@ import detect_ball
 import detect_court
 import detect_player
 
-def pipeline(vid_path, save_path_parents, player_model, court_model, segs=None, visualize=False, FPS=50):
+def pipeline(vid_path, save_path_parents, player_model, court_model, segs=None, visualize=False, FPS=50, width=1920, height=1080):
     ### need to automate ###
     # FPS=50
     #detected_points = detect_ball.detect()
@@ -41,11 +41,11 @@ def pipeline(vid_path, save_path_parents, player_model, court_model, segs=None, 
     
     # get trajectories
     trajectories = trajectory.predict_segments(ball_df, segments, P, FPS)
-    visualizer.visualize_trajectories_on_video(trajectories, segments, P, vid_path, out_path='predictions/rally6_v2/annotated.mp4')
+    visualizer.visualize_trajectories_on_video(trajectories, P, ball_df, vid_path=vid_path, out_path='predictions/rally6_v2/annotated_with_ball.mp4', show_ball=True)
+    visualizer.visualize_trajectories_on_video(trajectories, P, ball_df, vid_path=vid_path, out_path='predictions/rally6_v2/annotated_without_ball.mp4', show_ball=False)
+    visualizer.visualize_traj_vs_detections(trajectories, P, ball_df, width=width, height=height)
 
     print('Done!')
-
-
 
 
 def test():
@@ -58,8 +58,10 @@ def test():
     save_path_parents = Path('predictions') / Path(test_vid).stem
     save_path_parents.mkdir(parents=True, exist_ok=True)
 
-    cap = cv2.VideoCapture(test_vid)
+    cap = cv2.VideoCapture(str(test_vid))
     FPS = cap.get(cv2.CAP_PROP_FPS)
+    WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
     
     with open(test_segments_json, 'r') as file:
@@ -72,7 +74,9 @@ def test():
              court_model=court_model, 
              segs=segments, 
              visualize=True,
-             FPS=FPS)
+             FPS=FPS,
+             width=WIDTH,
+             height=HEIGHT)
 
 
 

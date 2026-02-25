@@ -7,15 +7,16 @@ def get_avg_keypoints(csv_path, min_vis=0.9):
     Computes the average keypoint value. Only takes keypoints with visability >= min_vis.
     '''
     court = pd.read_csv(csv_path)
-    print(f'Before filtering: {court.shape}')
 
     vis_cols = [
         'front_left_vis', 'mid_left_vis', 'mid_right_vis',
         'front_right_vis', 'service_right_vis', 'service_left_vis',
     ]
     mask = (court[vis_cols] >= min_vis).all(axis=1)
+
+    # print(f'Before filtering: {court.shape}')
     filtered = court[mask]
-    print(f'After filtering: {filtered.shape}')
+    # print(f'After filtering: {filtered.shape}')
 
     coord_cols = [
         'front_left_x', 'front_left_y',

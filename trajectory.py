@@ -126,7 +126,7 @@ def predict_3d_trajectory(seg_points_2d, start, stop, P, FPS):
 
 def predict_segments(detected_points, segments, P, FPS):
     '''
-    Predicts the 3D points that best optimize the loss function per segment. 
+    Predicts the 3D points that best optimize the loss function per segment.
     Args:
         detected_points: A dataframe containing the X and Y detected ball points in (u, v) coordinates. our "ground truth"
         segments: A list of tuples of the form (start frame, end frame) for the individual segments
@@ -134,13 +134,17 @@ def predict_segments(detected_points, segments, P, FPS):
         FPS: The frames per second of the video being detected
 
     Returns:
-        a list of trajectories, which are themselves list of 3D homogenous points in meters, with (0,0,0,1) being the T. 
+        A list of DataFrames, one per segment, with frame number as index and columns ['x', 'y', 'z', 'w']
+        representing 3D homogeneous coords in meters, with (0,0,0) at the center of the T.
     '''
     trajectories = []
     for start, stop in segments:
         seg_points_2d = detected_points.iloc[start:stop + 1]
-        traj = predict_3d_trajectory(seg_points_2d, start, stop, P, FPS)
-        trajectories.append(traj)
+        traj = predict_3d_trajectory(seg_points_2d, start, stop, P, FPS)  # Nx4 numpy array
+
+        traj_df = pd.DataFrame(traj, columns=['x', 'y', 'z', 'w'], index=range(start, stop + 1))
+        trajectories.append(traj_df)
+
         proj_traj = calibration.project_points(P, traj)
         loss = compute_loss(seg_points_2d.values, proj_traj)
         print(f"Segment {start}-{stop}: {len(traj)} points, first={traj[0]}, last={traj[-1]}\nLoss: {loss}")
@@ -164,6 +168,7 @@ def main():
     segments = [(seg['start_frame'], seg['end_frame']) for seg in data['segments']]
 
     trajectories = predict_segments(detected_points, segments, P, FPS)
+    print(trajectories[0])
     
 if __name__ == '__main__':
     main()
