@@ -12,6 +12,7 @@ def create_3d_trajectory(params, times):
 
     Args:
         params: The intial position (x,y,z) and initial velocity (vx0, vy0, vz0) of the ball. Each is an element of a list. 
+        times: a numpy array of the time steps to calculate for
 
     Returns:
         Times x 4 list of 3D homogenous coords in real world space based on intial conditions.
@@ -147,7 +148,7 @@ def predict_segments(detected_points, segments, P, FPS):
 
         proj_traj = calibration.project_points(P, traj)
         loss = compute_loss(seg_points_2d.values, proj_traj)
-        print(f"Segment {start}-{stop}: {len(traj)} points, first={traj[0]}, last={traj[-1]}\nLoss: {loss}")
+        # print(f"Segment {start}-{stop}: {len(traj)} points, first={traj[0]}, last={traj[-1]}\nLoss: {loss}")
 
     return trajectories
 
@@ -159,6 +160,8 @@ def main():
     
     detected_points = pd.read_csv(test_ball_csv)
     detected_points = detected_points[['X', 'Y']]
+
+    print(detected_points)
 
     avg = calibration.get_avg_keypoints(test_court_csv)
     P = calibration.map_3dcoords(avg)

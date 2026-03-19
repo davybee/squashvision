@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import calibration
+import pandas as pd
 
-test_img_path = '/scratch/network/db0197/Pipeline/data/rally6_v2/example_frames/frame094.jpg'
+test_img_path = '/scratch/network/db0197/Pipeline/data/rally6_v2/frames/frame0094.jpg'
 test_vid_path = '/scratch/network/db0197/LabelingProcess/Squash Data/elias_makin_london2025/rallies/rally6_v2.mp4'
 
 def visualize_court_points(points, img_path=test_img_path, labels=None):
@@ -122,3 +123,41 @@ def visualize_traj_vs_detections(trajectories, P, ball_df, out_dir, width=1920, 
         cv2.imwrite(str(out_path), canvas)
 
     print(f"Saved {len(trajectories)} images to {out_dir}/")
+
+def visualize_ball_detections(vid_path, ball_df, out_path):
+    cap = cv2.VideoCapture(vid_path)
+    fps    = cap.get(cv2.CAP_PROP_FPS)
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    writer = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
+
+    # csv indexed at 1 right now.
+    frame_idx = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        if frame_idx in ball_df.index:
+            u, v = int(ball_df.at[frame_idx, 'X']), int(ball_df.at[frame_idx, 'Y'])
+            cv2.circle(frame, (u, v), radius=6, color=(0, 255, 0), thickness=-1)
+            writer.write(frame)
+        frame_idx += 1
+
+    cap.release()
+    writer.release()
+    print(f"Saved annotated video to {out_path} ({frame_idx} frames)")
+
+def main():
+    ball_df_path = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball.csv'
+    ball_df = pd.read_csv(ball_df_path)
+    ball_df = ball_df[['X', 'Y']]
+    out_path = 'predictions/rally6_v2/annotated_ball.mp4'
+
+    visualize_ball_detections(test_vid_path, ball_df, out_path)
+    
+
+if __name__ == '__main__':
+    main()

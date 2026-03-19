@@ -54,7 +54,11 @@ def main():
     import trajectory
     import json
 
+    print('\n--- ERRORS IN DETECTION ---\n\n')
+
     ## testing the court accuracy metric
+    print(' -- Court Detection Error -- \n')
+
     test_gt = 'data/rally6_v2/court_labels/makin_ground_truth.csv'
     test_detection = 'predictions/rally6_v2/court_keypoints.csv'
 
@@ -62,10 +66,13 @@ def main():
     gt = calibration.get_avg_keypoints(test_gt, min_vis=0)
 
     distances, mean_dist = get_court_accuracy(avg, gt)
+    
     print('Mean distance in px', mean_dist)
-    print('Keypoint distances:\n', distances, sep='')
+    print('Keypoint distances:\n', distances, '\n', sep='')
 
     ## testing the trajectory accuracy metric
+    print(' -- Trajectory Detection Error -- \n')
+
     test_ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball.csv'
     test_segments_json = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment.json'
 
