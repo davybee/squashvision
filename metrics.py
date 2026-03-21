@@ -54,13 +54,17 @@ def main():
     import trajectory
     import json
 
+    project = 'manual_penalty_run'
+
+    print(f'\n Testing data from project: {project}')
+
     print('\n--- ERRORS IN DETECTION ---\n\n')
 
     ## testing the court accuracy metric
     print(' -- Court Detection Error -- \n')
 
     test_gt = 'data/rally6_v2/court_labels/makin_ground_truth.csv'
-    test_detection = 'predictions/rally6_v2/court_keypoints.csv'
+    test_detection = f'predictions/rally6_v2/{project}/court_keypoints.csv'
 
     avg = calibration.get_avg_keypoints(test_detection)
     gt = calibration.get_avg_keypoints(test_gt, min_vis=0)
@@ -73,8 +77,8 @@ def main():
     ## testing the trajectory accuracy metric
     print(' -- Trajectory Detection Error -- \n')
 
-    test_ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball.csv'
-    test_segments_json = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment.json'
+    test_ball_csv = f'/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
+    test_segments_json = f'/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment_new.json'
 
     detected_ball = pd.read_csv(test_ball_csv)
     detected_ball = detected_ball[['X', 'Y']]
@@ -86,11 +90,17 @@ def main():
     P = calibration.map_3dcoords(avg)
     FPS = 50
     trajectories = trajectory.predict_segments(detected_ball, segments, P, FPS)
+    all_distances = []
     for i, traj_df in enumerate(trajectories):
         proj_traj = calibration.project_points(P, traj_df.values)
         gt_points = detected_ball.loc[traj_df.index]
         distances, mean_dist = get_traj_accuracy(proj_traj, gt_points.values)
+        all_distances.append(distances)
         print(f'Trajectory {i} avg distance:', mean_dist, 'px')
+
+    all_distances = np.concatenate(all_distances)
+    print(f'\nOverall avg trajectory distance: {all_distances.mean():.4f} px')
+    print(f'Overall median trajectory distance: {np.median(all_distances):.4f} px')
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 .ipynb_checkpoints
 __pycache__
-stdout_err
+std_out_err
 predictions*
 models
 data

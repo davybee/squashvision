@@ -22,20 +22,20 @@ def create_3d_trajectory(params, times):
     g = 9.81
 
     n_points = len(times)
-    positions = np.zeros((n_points, 4))
+    exp_dt = np.exp(-drag * times)
 
-    for i, t in enumerate(times):
-        positions[i, 0] = x0 + vx0 * t * np.exp(-drag * t)
-        positions[i, 1] = y0 + vy0 * t * np.exp(-drag * t)
-        positions[i, 2] = z0 + vz0 * t - 0.5 * g * t ** 2
-        positions[i, 3] = 1 # homogenous coords
+    positions = np.zeros((n_points, 4))
+    positions[:, 0] = x0 + (vx0 / drag) * (1 - exp_dt)
+    positions[:, 1] = y0 + (vy0 / drag) * (1 - exp_dt)
+    positions[:, 2] = z0 + (vz0 + g/drag) / drag * (1 - exp_dt) - (g / drag) * times
+    positions[:, 3] = 1
 
     return positions
 
 def relu(x):
     return np.maximum(0.0, x)
 
-def court_violation_residuals(points_3d, weight=10.0):
+def court_violation_residuals(points_3d, weight=100000000.0):
     '''
     Computes soft constraint residuals for squash court boundary violations, per frame.
 
@@ -95,7 +95,7 @@ def predict_3d_trajectory(seg_points_2d, start, stop, P, FPS):
 
         reproj_res = (proj_points - detected_points).reshape(-1)     # (2N,)
 
-        court_res = court_violation_residuals(points_3d, weight=10.0) # tune weight if needed
+        court_res = court_violation_residuals(points_3d, weight=100000000.0) # tune weight if needed
         return np.concatenate([reproj_res, court_res], axis=0)
 
     x0 = np.array([0.0, 0.0, 1.0,
@@ -104,7 +104,7 @@ def predict_3d_trajectory(seg_points_2d, start, stop, P, FPS):
 
     lb = np.array([-3.2, -4.31, 0.0,
                    -30.0, -30.0, -20.0,
-                   0.0], dtype=np.float64)
+                   1e-6], dtype=np.float64)
     ub = np.array([ 3.2,  5.44, 10.0,
                     30.0,  30.0,  20.0,
                     5.0], dtype=np.float64)
@@ -114,7 +114,7 @@ def predict_3d_trajectory(seg_points_2d, start, stop, P, FPS):
         x0,
         bounds=(lb, ub),
         method="trf",
-        loss="soft_l1",
+        loss="linear",
         f_scale=3.0,
         x_scale="jac",
         ftol=1e-6,
