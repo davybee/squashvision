@@ -140,7 +140,9 @@ def test_optimization(run_name=None):
     test_segments_json = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment_new.json'
     test_vid = Path('/scratch/network/db0197/LabelingProcess/Squash Data/elias_makin_london2025/rallies/rally6_v2.mp4')
     court_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/court_labels/court_keypoints.csv'
-    ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
+
+    # ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
+    ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_untouched.csv'
 
     save_path_parents = Path('predictions') / Path(test_vid).stem
     save_path_parents.mkdir(parents=True, exist_ok=True)
@@ -167,7 +169,7 @@ def test_optimization(run_name=None):
 
 
 if __name__ == '__main__':
-    folder = 'manual_penalty_run_alone'
-
+    folder = 'linear_bad_ball_run'
     test_optimization(run_name = folder)
+
     # test_all(run_name = folder)

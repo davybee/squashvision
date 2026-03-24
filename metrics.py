@@ -49,14 +49,59 @@ def get_traj_accuracy(traj, detected_gt):
 
     return distances, mean_dist
 
+
+
+def get_ball_accuracy(gt_path, pred_path):
+    '''Computes ball detection accuracy metrics between a prediction CSV and ground truth CSV.
+
+    Only frames where the ground truth is visible (Visibility=1) are used for pixel error
+    metrics. Reappearance error is computed on the first visible frame after an occlusion
+    (GT Visibility transitions from 0 to 1).
+
+    Args:
+        gt_path: Path to ground truth CSV with columns Frame, Visibility, X, Y
+        pred_path: Path to predictions CSV with columns Frame, Visibility, X, Y
+
+    Returns:
+        mean_diff: Mean Euclidean pixel distance over all visible GT frames
+        median_diff: Median Euclidean pixel distance over all visible GT frames
+        mean_reappearance_diff: Mean pixel distance on the first frame after each occlusion
+    '''
+    gt = pd.read_csv(gt_path)
+    pred = pd.read_csv(pred_path)
+
+    merged = gt.merge(pred, on='Frame', suffixes=('_gt', '_pred'))
+
+    visible = merged[merged['Visibility_gt'] == 1].copy()
+    dists = np.sqrt((visible['X_gt'] - visible['X_pred'])**2 + (visible['Y_gt'] - visible['Y_pred'])**2)
+
+    mean_diff = dists.mean()
+    median_diff = dists.median()
+
+    # Reappearance frames: GT transitions from 0 → 1
+    gt_sorted = gt.sort_values('Frame').reset_index(drop=True)
+    reappearance_frames = gt_sorted.loc[
+        (gt_sorted['Visibility'] == 1) &
+        (gt_sorted['Visibility'].shift(1) == 0)
+    , 'Frame']
+
+    reappearance_rows = merged[merged['Frame'].isin(reappearance_frames)]
+    reapp_dists = np.sqrt(
+        (reappearance_rows['X_gt'] - reappearance_rows['X_pred'])**2 +
+        (reappearance_rows['Y_gt'] - reappearance_rows['Y_pred'])**2
+    )
+    mean_reappearance_diff = reapp_dists.mean() if len(reapp_dists) > 0 else float('nan')
+
+    return mean_diff, median_diff, mean_reappearance_diff
+
+
 def main():
     import calibration
     import trajectory
     import json
 
-    project = 'manual_penalty_run'
-
-    print(f'\n Testing data from project: {project}')
+    # project = 'manual_penalty_run'
+    # print(f'\n Testing data from project: {project}')
 
     print('\n--- ERRORS IN DETECTION ---\n\n')
 
@@ -64,7 +109,7 @@ def main():
     print(' -- Court Detection Error -- \n')
 
     test_gt = 'data/rally6_v2/court_labels/makin_ground_truth.csv'
-    test_detection = f'predictions/rally6_v2/{project}/court_keypoints.csv'
+    test_detection = '/scratch/network/db0197/Pipeline/data/rally6_v2/court_labels/court_keypoints.csv'
 
     avg = calibration.get_avg_keypoints(test_detection)
     gt = calibration.get_avg_keypoints(test_gt, min_vis=0)
@@ -74,11 +119,21 @@ def main():
     print('Mean distance in px', mean_dist)
     print('Keypoint distances:\n', distances, '\n', sep='')
 
+    print(' -- Ball Detection Error -- \n')
+
+    corrected_ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
+    raw_ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_untouched.csv'
+
+    mean_dif, med_dif, reappear_dif = get_ball_accuracy(corrected_ball_csv, raw_ball_csv)
+
+    print(f'Mean px difference: {mean_dif} px\nMedian px difference: {med_dif} px\nReappearance difference: {reappear_dif} px\n')
+
+
     ## testing the trajectory accuracy metric
     print(' -- Trajectory Detection Error -- \n')
 
-    test_ball_csv = f'/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
-    test_segments_json = f'/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment_new.json'
+    test_ball_csv = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball_corrected_pixels.csv'
+    test_segments_json = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/manual_segment_new.json'
 
     detected_ball = pd.read_csv(test_ball_csv)
     detected_ball = detected_ball[['X', 'Y']]
@@ -96,7 +151,7 @@ def main():
         gt_points = detected_ball.loc[traj_df.index]
         distances, mean_dist = get_traj_accuracy(proj_traj, gt_points.values)
         all_distances.append(distances)
-        print(f'Trajectory {i} avg distance:', mean_dist, 'px')
+        # print(f'Trajectory {i} avg distance:', mean_dist, 'px')
 
     all_distances = np.concatenate(all_distances)
     print(f'\nOverall avg trajectory distance: {all_distances.mean():.4f} px')

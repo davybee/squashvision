@@ -150,6 +150,9 @@ def visualize_ball_detections(vid_path, ball_df, out_path):
     writer.release()
     print(f"Saved annotated video to {out_path} ({frame_idx} frames)")
 
+# def visualize_players(vid_path, player_detections, out_path):
+
+
 def main():
     ball_df_path = '/scratch/network/db0197/Pipeline/data/rally6_v2/ball_labels/rally6_v2_ball.csv'
     ball_df = pd.read_csv(ball_df_path)

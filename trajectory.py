@@ -114,7 +114,7 @@ def predict_3d_trajectory(seg_points_2d, start, stop, P, FPS):
         x0,
         bounds=(lb, ub),
         method="trf",
-        loss="linear",
+        loss="soft_l1",
         f_scale=3.0,
         x_scale="jac",
         ftol=1e-6,
