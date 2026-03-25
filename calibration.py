@@ -77,6 +77,38 @@ def map_3dcoords(detected_coords):
 
     return P
 
+def find_homography(P):
+    '''
+    Finds court mapping homography from the whole 3D projection matrix.
+    '''
+    H = P[:, [0, 1, 3]]
+    H_inv = np.linalg.inv(H)
+    return H_inv
+
+def pixel_to_court(H_inv, pixel_pts):
+    """
+    Convert pixel coordinates to court coordinates (meters, origin at T).
+    
+    Args:
+        H_inv: inverse homography from get_floor_homography()
+        pixel_pts: Nx2 array of (u, v) pixel coordinates
+        
+    Returns:
+        Nx2 array of (x, y) court coordinates in meters
+    """
+    pts = np.atleast_2d(pixel_pts)
+    # To homogeneous: (u, v, 1)
+    ones = np.ones((pts.shape[0], 1))
+    pts_h = np.hstack([pts, ones])  # (N, 3)
+    
+    # Transform
+    court_h = (H_inv @ pts_h.T).T  # (N, 3)
+    
+    # Normalize homogeneous coords
+    court = court_h[:, :2] / court_h[:, 2:3]
+    
+    return court
+
 def project_points(P, world_pts):
     '''Projects a 3D homogeneous world point through P, returns (u, v) coordinates
     
@@ -92,30 +124,34 @@ def project_points(P, world_pts):
     u, v = pt_h[0] / pt_h[2], pt_h[1] / pt_h[2]
     return list(zip(u, v))
 
+def pairwise(iterable):
+        it = iter(iterable)
+        return list(zip(it, it))
+
 # visualize detected court keypoints
 def main():
     from visualizer import visualize_court_points
 
-    def pairwise(iterable):
-        it = iter(iterable)
-        return list(zip(it, it))
-
-    ### testing finding average points
-    test_path = 'predictions/rally6_v2/court_keypoints.csv'
+    test_path = '/scratch/network/db0197/Pipeline/data/rally6_v2/court_labels/court_keypoints.csv'
     avg = get_avg_keypoints(test_path)
-    # print(avg)
-    points = pairwise(avg.values)
-    # visualize_court_points(points) # visualize doesn't work on command line
 
-    ### Testing Projection Matrix
     P = map_3dcoords(avg)
-    court_points = [[-3.2, 5.44, 0], [3.2, 5.44, 0], [-3.2, 0, 0], [3.2, 0, 0], [-3.2, 5.44, 1.78], [3.2, 5.44, 1.78]]
-    court_points = [points + [1] for points in court_points]
-    proj_court_points = project_points(P, court_points)
-    # visualize__court_points(proj_court_points)
 
-    ### demonstrates error of projection
-    print(np.array(points) - np.array(proj_court_points))
+    # Use the SAME keypoint order as map_3dcoords
+    keypoints = ['front_left', 'front_right', 'mid_left', 'mid_right', 'service_left', 'service_right']
+    
+    court_points = [[-3.2, 5.44, 0], [3.2, 5.44, 0], [-3.2, 0, 0], [3.2, 0, 0], [-3.2, 5.44, 1.78], [3.2, 5.44, 1.78]]
+    court_points_h = [p + [1] for p in court_points]
+    proj_court_points = project_points(P, court_points_h)
+
+    # Build pixel points in the SAME order
+    pixel_points = [(avg[f'{kp}_x'], avg[f'{kp}_y']) for kp in keypoints]
+
+    errors = np.array(pixel_points) - np.array(proj_court_points)
+    print("Reprojection errors (pixels):")
+    for kp, err in zip(keypoints, errors):
+        print(f"  {kp}: ({err[0]:.3f}, {err[1]:.3f})")
+    print(f"  Mean absolute error: {np.abs(errors).mean():.3f} px")
 
 if __name__ == '__main__':
     main()

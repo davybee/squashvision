@@ -108,7 +108,7 @@ def main():
     ## testing the court accuracy metric
     print(' -- Court Detection Error -- \n')
 
-    test_gt = 'data/rally6_v2/court_labels/makin_ground_truth.csv'
+    test_gt = 'data/rally6_v2/court_labels/makin_ground_truth_court.csv'
     test_detection = '/scratch/network/db0197/Pipeline/data/rally6_v2/court_labels/court_keypoints.csv'
 
     avg = calibration.get_avg_keypoints(test_detection)

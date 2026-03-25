@@ -51,7 +51,8 @@ def detect_court_keypoints(model_path, data_path, save_path, save_frames=False, 
         project=f'data/{data_name}', 
         save=save_frames,
         save_frames=save_frames,
-        stream=stream
+        stream=stream,
+        imgsz=1920
     )
 
     save_results(results, save_path)

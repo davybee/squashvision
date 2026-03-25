@@ -35,11 +35,11 @@ def pipeline(vid_path, save_path_parents, player_model, court_model, segs=None, 
     run_dir = _resolve_run_dir(save_path_parents, run_name)
     print(f'Saving to: {run_dir}')
 
-    save_path_player = run_dir / 'player_keypoints.csv'
-    detect_player.detect_player_keypoints(player_model, vid_path, save_path_player)
-
     save_path_court = run_dir / 'court_keypoints.csv'
     detect_court.detect_court_keypoints(court_model, vid_path, save_path_court)
+
+    save_path_player = run_dir / 'player_keypoints.csv'
+    detect_player.detect_player_keypoints(player_model, vid_path, save_path_player, save_path_court)
 
     # get projection matrix
     avg_points = calibration.get_avg_keypoints(str(save_path_court))
